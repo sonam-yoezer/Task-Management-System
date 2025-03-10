@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, NotFoundException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -6,6 +6,7 @@ import * as bcrypt from 'bcryptjs';
 import { User } from '../users/user.entity';
 import { jwtConstants } from './constants';
 import { Role } from 'src/Users/role.enum';
+import { LoginDto } from './login.dto';
 
 @Injectable()
 export class AuthService {
@@ -13,7 +14,7 @@ export class AuthService {
     @InjectRepository(User)
     private usersRepository: Repository<User>,
     private jwtService: JwtService,
-  ) {}
+  ) { }
 
   /**
    * @method validateUser
@@ -60,7 +61,7 @@ export class AuthService {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = this.usersRepository.create({
+    const newUser = await this.usersRepository.create({
       email,
       password: hashedPassword,
       firstName,
@@ -74,28 +75,58 @@ export class AuthService {
 
   /**
    * @method login
-   * @description Authenticates the user and generates JWT access and refresh tokens.
-   *
-   * @param {any} user - The user object containing credentials and other details.
-   *
-   * @throws {UnauthorizedException} - If token generation fails.
-   *
-   * @returns {Promise<{ access_token: string, refresh_token: string }>} - The generated access and refresh tokens.
-   */
-  async login(user: any) {
+   * Handles the login process by validating the user's credentials and generating access and refresh tokens.
+   * 
+   * @param {LoginDto} loginDto - The data transfer object containing the login credentials (email and password).
+   * @returns {Promise<{ access_token: string, refresh_token: string }>} A promise that resolves to an object containing 
+   * the generated access token and refresh token.
+   * @throws {UnauthorizedException} If the user credentials are invalid or if token generation fails.
+  * 
+  * @example
+  * const result = await login({ email: 'user@example.com', password: 'password123' });
+  * console.log(result.access_token);  // The access token
+  * console.log(result.refresh_token); // The refresh token
+  */
+  async login(loginDto: LoginDto) {
+    const { email, password } = loginDto;
+
+    // Find user by email
+    const user = await this.usersRepository.findOne({ where: { email } });
+
+    // Check if user exists
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    // Verify password
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    // Create JWT payload
     const payload = { email: user.email, sub: user.id, role: user.role };
+
     try {
+      // Generate access token
       const accessToken = this.jwtService.sign(payload, {
         secret: jwtConstants.secret,
         expiresIn: jwtConstants.accessTokenExpiration,
       });
+
+      // Generate refresh token
       const refreshToken = this.jwtService.sign(payload, {
         secret: jwtConstants.refreshSecret,
         expiresIn: jwtConstants.refreshTokenExpiration,
       });
-      return { access_token: accessToken, refresh_token: refreshToken };
+
+      // Return tokens and role
+      return {
+        access_token: accessToken,
+        refresh_token: refreshToken,
+        role: user.role,
+      };
     } catch (error) {
-      console.error('Token generation failed:', error); // Debugging
       throw new UnauthorizedException('Failed to generate tokens');
     }
   }
@@ -120,4 +151,31 @@ export class AuthService {
       throw new UnauthorizedException('Invalid refresh token');
     }
   }
+
+  /**
+  * @method getUserProfile
+  * @description Retrieves the profile details of a user by their ID.
+  * @param {number} userId - The unique identifier of the user.
+  * @returns {Promise<{ id: number, firstName: string, lastName: string, email: string, role: string }>}  
+  *          A promise resolving to the user's profile details.
+  * @throws {NotFoundException} If the user is not found in the database.
+  */
+  async getUserProfile(userId: number) {
+    const user = await this.usersRepository.findOne({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return {
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      role: user.role,
+    };
+  }
+
 }

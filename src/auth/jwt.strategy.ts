@@ -1,8 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { AuthService } from './auth.service';
 import { jwtConstants } from './constants';
+import { Repository } from 'typeorm';
+import { User } from 'src/users/user.entity';
+import { InjectRepository } from '@nestjs/typeorm';
 
 /**
  * @class JwtStrategy
@@ -16,7 +19,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
    * @param {AuthService} authService - The AuthService used to validate user credentials.
    * @description Initializes the JwtStrategy with necessary configurations.
    */
-  constructor(private authService: AuthService) {
+  constructor(
+    private authService: AuthService,
+    @InjectRepository(User)
+    private readonly usersRepository: Repository<User>,
+  ) {
     super({
       /**
        * @property {function} jwtFromRequest - Extracts JWT token from the Authorization header as a Bearer token.
@@ -41,13 +48,21 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
    * @method validate
    * @description Validates the payload from the JWT and returns the relevant user information.
    * @param {any} payload - The decoded JWT payload containing user data.
-   * @returns {Promise<{ userId: string, username: string, role: string }>} - The validated user information.
+   * @returns {Promise<{ id: number, firstName: string, lastName: string, email: string, role: string }>} - The validated user information.
+   * @throws {UnauthorizedException} If the user is not found in the database.
    */
   async validate(payload: any) {
+    const user = await this.usersRepository.findOne({ where: { id: payload.sub } });
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
     return {
-      userId: payload.sub,
-      username: payload.username,
-      role: payload.role,
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      role: user.role,
     };
   }
+
 }

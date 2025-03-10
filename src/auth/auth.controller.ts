@@ -1,4 +1,4 @@
-import { Body, Controller, Post, UseGuards, Req, UnauthorizedException } from '@nestjs/common';
+import { Body, Controller, Post, UseGuards, Req, UnauthorizedException, Get } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { LoginDto } from './login.dto';
@@ -6,7 +6,7 @@ import { SignupDto } from './signup.dto';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService) { }
 
   /**
    * @method signup
@@ -105,4 +105,24 @@ export class AuthController {
     const refreshToken = authHeader.split(' ')[1]; // Get the token after "Bearer "
     return this.authService.refreshToken(refreshToken);
   }
+
+  /**
+  * @method getMe
+  * @description Retrieves the profile of the authenticated user.
+  * @param {Request} req - The request object containing user details from the JWT.
+  * @returns {Promise<{ id: number, firstName: string, lastName: string, email: string, role: string }>}  
+  *          A promise resolving to the authenticated user's profile details.
+  * @throws {UnauthorizedException} If the user is not authenticated or the token is invalid.
+  */
+  @Get('self')
+  @UseGuards(AuthGuard('jwt'))
+  async getMe(@Req() req) {
+      if (!req.user || !req.user.id) {
+          throw new UnauthorizedException('Invalid token or user data missing');
+      }
+      
+      const userId = req.user.id;
+      return this.authService.getUserProfile(userId);
+  }  
+
 }
