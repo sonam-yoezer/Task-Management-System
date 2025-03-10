@@ -1,6 +1,7 @@
 export const jwtConstants = {
     secret: '',
     refreshSecret: '', 
-    accessTokenExpiration: '5m',
+    accessTokenExpiration: '1m',
     refreshTokenExpiration: '7d',
 };
+ 
