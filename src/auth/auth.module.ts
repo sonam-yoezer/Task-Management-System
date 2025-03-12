@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from 'src/users/user.entity';
@@ -7,6 +7,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { jwtConstants } from './constants';
 import { JwtStrategy } from './jwt.strategy';
 import { AuthController } from './auth.controller';
+import { UserModule } from 'src/Users/user.module';
 
 /**
  * @module AuthModule
@@ -52,5 +53,5 @@ import { AuthController } from './auth.controller';
   providers: [AuthService, JwtStrategy],
   controllers: [AuthController],
   exports: [JwtStrategy, PassportModule],
-})
+}) 
 export class AuthModule {}
