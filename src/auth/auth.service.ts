@@ -78,15 +78,23 @@ export class AuthService {
    * Handles the login process by validating the user's credentials and generating access and refresh tokens.
    * 
    * @param {LoginDto} loginDto - The data transfer object containing the login credentials (email and password).
-   * @returns {Promise<{ access_token: string, refresh_token: string }>} A promise that resolves to an object containing 
-   * the generated access token and refresh token.
+   * @returns {Promise<{ access_token: string, refresh_token: string }>} A promise that resolves to an object containing
+   * - {string} access_token - The generated JWT access token.
+   * - {string} refresh_token - The generated JWT refresh token.
+   * - {string} role - The role of the authenticated user.
+   *  
    * @throws {UnauthorizedException} If the user credentials are invalid or if token generation fails.
-  * 
-  * @example
-  * const result = await login({ email: 'user@example.com', password: 'password123' });
-  * console.log(result.access_token);  // The access token
-  * console.log(result.refresh_token); // The refresh token
-  */
+   * 
+   * @security
+   * - The password is securely hashed and stored in the database.
+   * - The access token has a short expiration time for security reasons.
+   * - The refresh token is stored in the database and should be securely managed.
+   * 
+   * @example
+   * const result = await login({ email: 'user@example.com', password: 'password123' });
+   * console.log(result.access_token);  // The access token
+   * console.log(result.refresh_token); // The refresh token
+   */
   async login(loginDto: LoginDto) {
     const { email, password } = loginDto;
 
@@ -120,6 +128,8 @@ export class AuthService {
         expiresIn: jwtConstants.refreshTokenExpiration,
       });
 
+      await this.usersRepository.update(user.id, { refreshToken });
+
       // Return tokens and role
       return {
         access_token: accessToken,
@@ -143,14 +153,27 @@ export class AuthService {
    */
   async refreshToken(token: string) {
     try {
+      // Verify the refresh token
       const payload = this.jwtService.verify(token, {
         secret: jwtConstants.refreshSecret,
       });
-      return this.login(payload);
-    } catch (e) {
-      throw new UnauthorizedException('Invalid refresh token');
+
+      // Fetch user from database
+      const user = await this.usersRepository.findOne({
+        where: { id: payload.id },
+      });
+
+      if (!user || user.refreshToken !== token) {
+        throw new UnauthorizedException('Invalid refresh token');
+      }
+
+      // Generate new tokens
+      return this.generateTokens(user);
+    } catch (error) {
+      throw new UnauthorizedException('Refresh token expired or invalid');
     }
   }
+
 
   /**
   * @method getUserProfile
@@ -175,6 +198,35 @@ export class AuthService {
       lastName: user.lastName,
       email: user.email,
       role: user.role,
+    };
+  }
+
+  /**
+ * Generates an access token and a refresh token for a given user, and updates the user's record with the refresh token.
+ *
+ * @param {User} user - The user object containing user details such as email, id, and role.
+ * @returns {Promise<{ access_token: string, refresh_token: string }>} - A promise that resolves to an object containing the generated access token and refresh token.
+ *
+ * @throws {Error} - Throws an error if there is an issue updating the user's refresh token in the database.
+ */
+  async generateTokens(user: User) {
+    const payload = { email: user.email, sub: user.id, role: user.role };
+
+    const accessToken = this.jwtService.sign(payload, {
+      secret: jwtConstants.secret,
+      expiresIn: jwtConstants.accessTokenExpiration,
+    });
+
+    const refreshToken = this.jwtService.sign(payload, {
+      secret: jwtConstants.refreshSecret,
+      expiresIn: jwtConstants.refreshTokenExpiration,
+    });
+
+    await this.usersRepository.update(user.id, { refreshToken });
+
+    return {
+      access_token: accessToken,
+      refresh_token: refreshToken,
     };
   }
 
