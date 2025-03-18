@@ -1,4 +1,4 @@
-import { Role } from 'src/Users/role.enum';
+import { Role } from 'src/users/role.enum';
 import { Column, CreateDateColumn, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 
 export class SignupDto {
