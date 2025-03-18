@@ -5,7 +5,7 @@ import { Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import { User } from '../users/user.entity';
 import { jwtConstants } from './constants';
-import { Role } from 'src/Users/role.enum';
+import { Role } from 'src/users/role.enum';
 import { LoginDto } from './login.dto';
 
 @Injectable()
