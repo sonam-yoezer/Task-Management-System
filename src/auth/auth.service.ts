@@ -142,38 +142,56 @@ export class AuthService {
   }
 
   /**
-   * @method refreshToken
-   * @description Refreshes authentication tokens using a valid refresh token.
-   *
-   * @param {string} token - The refresh token provided by the client.
-   *
-   * @throws {UnauthorizedException} - If the refresh token is invalid or expired.
-   *
-   * @returns {Promise<{ access_token: string, refresh_token: string }>} - A new pair of access and refresh tokens.
-   */
+ * @method refreshToken
+ * @description Refreshes authentication tokens using a valid refresh token. Verifies the token,
+ *              checks it against the stored user token, generates new tokens, and updates the
+ *              database with the new refresh token.
+ *
+ * @param {string} token - The refresh token provided by the client in the Authorization header.
+ *
+ * @throws {UnauthorizedException} If the refresh token is invalid, expired, doesn't match the stored token,
+ *                                 or if the user is not found.
+ *
+ * @returns {Promise<{ access_token: string, refresh_token: string }>} A promise resolving to an object
+ *          containing a new access token and refresh token pair.
+ */
   async refreshToken(token: string) {
     try {
-      // Verify the refresh token
+      // Verify token
       const payload = this.jwtService.verify(token, {
         secret: jwtConstants.refreshSecret,
       });
 
-      // Fetch user from database
+      // Fetch user
       const user = await this.usersRepository.findOne({
-        where: { id: payload.id },
+        where: { id: payload.sub }, // Use sub instead of id if that's what's in payload
       });
 
-      if (!user || user.refreshToken !== token) {
-        throw new UnauthorizedException('Invalid refresh token');
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+      // Check token match
+      if (!user.refreshToken || user.refreshToken !== token) {
+        throw new UnauthorizedException('Invalid refresh token - tokens do not match');
       }
 
       // Generate new tokens
-      return this.generateTokens(user);
+      const newTokens = await this.generateTokens(user);
+
+      // Update refresh token in database
+      await this.usersRepository.update(
+        { id: user.id },
+        { refreshToken: newTokens.refresh_token }
+      );
+
+      return newTokens;
     } catch (error) {
-      throw new UnauthorizedException('Refresh token expired or invalid');
+      if (error.name === 'TokenExpiredError') {
+        throw new UnauthorizedException('Refresh token expired');
+      }
+      throw new UnauthorizedException(error.message || 'Invalid refresh token');
     }
   }
-
 
   /**
   * @method getUserProfile
