@@ -161,7 +161,6 @@ export class AuthService {
       const payload = this.jwtService.verify(token, {
         secret: jwtConstants.refreshSecret,
       });
-
       // Fetch user
       const user = await this.usersRepository.findOne({
         where: { id: payload.sub }, // Use sub instead of id if that's what's in payload
@@ -192,6 +191,7 @@ export class AuthService {
       throw new UnauthorizedException(error.message || 'Invalid refresh token');
     }
   }
+
 
   /**
   * @method getUserProfile
