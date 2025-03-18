@@ -97,13 +97,17 @@ export class AuthController {
    */
   @Post('refresh')
   async refresh(@Req() request: Request) {
-    // Extract the token from the Authorization header
-    const authHeader = request.headers['authorization'];
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new UnauthorizedException('Invalid authorization header');
+    try {
+      const authHeader = request.headers['authorization'];
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        throw new UnauthorizedException('Invalid authorization header');
+      }
+      const refreshToken = authHeader.split(' ')[1];
+      const tokens = await this.authService.refreshToken(refreshToken);
+      return tokens; // { accessToken, refreshToken }
+    } catch (error) {
+      throw new UnauthorizedException(error.message || 'Refresh failed');
     }
-    const refreshToken = authHeader.split(' ')[1]; // Get the token after "Bearer "
-    return this.authService.refreshToken(refreshToken);
   }
 
   /**
@@ -117,12 +121,12 @@ export class AuthController {
   @Get('self')
   @UseGuards(AuthGuard('jwt'))
   async getMe(@Req() req) {
-      if (!req.user || !req.user.id) {
-          throw new UnauthorizedException('Invalid token or user data missing');
-      }
-      
-      const userId = req.user.id;
-      return this.authService.getUserProfile(userId);
-  }  
+    if (!req.user || !req.user.id) {
+      throw new UnauthorizedException('Invalid token or user data missing');
+    }
+
+    const userId = req.user.id;
+    return this.authService.getUserProfile(userId);
+  }
 
 }
