@@ -5,6 +5,8 @@ import { AuthModule } from './auth/auth.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './users/user.entity';
 import { UserModule } from './users/user.module';
+import { Work } from './work/work.entity';
+import { workModule } from './work/work.module';
 
 @Module({
   imports: [
@@ -15,11 +17,12 @@ import { UserModule } from './users/user.module';
       username: process.env.DATABASE_USERNAME || 'root',
       password: process.env.DATABASE_PASSWORD || '',
       database: process.env.DATABASE_NAME || 'task_management',
-      entities: [User],
+      entities: [User, Work],
       synchronize: true,
     }),
     AuthModule,
-    UserModule
+    UserModule,
+    workModule
   ],
   controllers: [AppController],
   providers: [AppService],
