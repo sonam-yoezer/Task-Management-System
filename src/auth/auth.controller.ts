@@ -4,7 +4,7 @@ import { AuthService } from './auth.service';
 import { LoginDto } from './login.dto';
 import { SignupDto } from './signup.dto';
 
-@Controller('auth')
+@Controller('api/auth')
 export class AuthController {
   constructor(private authService: AuthService) { }
 
@@ -35,7 +35,7 @@ export class AuthController {
    *   "message": "User registered successfully"
    * }
    */
-  @Post('signup')
+  @Post('/signup')
   async signup(@Body() signupDto: SignupDto) {
     return this.authService.signup(
       signupDto.email,
@@ -68,7 +68,7 @@ export class AuthController {
    *   "access_token": "your_jwt_token"
    * }
    */
-  @Post('login')
+  @Post('/login')
   async login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
   }
@@ -95,7 +95,7 @@ export class AuthController {
    *   "refresh_token": "new_refresh_token"
    * }
    */
-  @Post('refresh')
+  @Post('/refresh')
   async refresh(@Req() request: Request) {
     try {
       const authHeader = request.headers['authorization'];
@@ -118,7 +118,7 @@ export class AuthController {
   *          A promise resolving to the authenticated user's profile details.
   * @throws {UnauthorizedException} If the user is not authenticated or the token is invalid.
   */
-  @Get('self')
+  @Get('/self')
   @UseGuards(AuthGuard('jwt'))
   async getMe(@Req() req) {
     if (!req.user || !req.user.id) {

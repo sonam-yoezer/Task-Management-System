@@ -23,4 +23,4 @@ import { WorkController } from './work.controller';
   controllers: [WorkController],
   exports: [],
 })
-export class workModule { }
+export class WorkModule { }

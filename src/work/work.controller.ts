@@ -14,7 +14,7 @@ import { UpdateWorkDto } from "./updatework.dto";
  * Only administrators can perform these actions.
  */
 @UseGuards(AuthGuard('jwt'))
-@Controller('work')
+@Controller('api/work')
 export class WorkController {
 
     /**
@@ -33,7 +33,7 @@ export class WorkController {
      * @returns {Promise<Work>} - The newly created work item.
      * @throws {ForbiddenException} If the user is not an admin.
      */
-    @Post()
+    @Post('/addWork')
     async create(@Body() workData: CreateWorkDto, @User() admin: UserEntity) {
         return this.workService.createWork(workData, admin);
     }
@@ -45,7 +45,7 @@ export class WorkController {
      * @param {UserEntity} admin - The authenticated user (admin) requesting the data.
      * @returns {Promise<any[]>} - A list of all work items.
      */
-    @Get()
+    @Get('/getAllWork')
     async findAll(@User() admin) {
         return this.workService.findAll(admin);
     }
@@ -58,7 +58,7 @@ export class WorkController {
      * @param {UserEntity} admin - The authenticated user (admin) requesting the data.
      * @returns {Promise<any>} - The work item if found.
      */
-    @Get(':id')
+    @Get('/getWorkById/:id')
     async findOne(@Param('id') id: number, @User() admin: UserEntity) {
         return this.workService.findOne(id, admin);
     }
@@ -75,7 +75,7 @@ export class WorkController {
      * @throws {ForbiddenException} If the user is not an admin.
      * @throws {NotFoundException} If the work item does not exist.
      */
-    @Put(':id')
+    @Put('/updateWork/:id')
     async update(@Param('id') id: number, @Body() updateData: UpdateWorkDto, @User() admin: UserEntity) {
         return this.workService.updateWork(id, updateData, admin);
     }
@@ -88,7 +88,7 @@ export class WorkController {
      * @param {UserEntity} admin - The authenticated user (admin) performing the deletion.
      * @returns {Promise<{message: string}>} - Confirmation of successful deletion.
      */
-    @Delete(':id')
+    @Delete('/deleteWork/:id')
     async delete(@Param('id') id: number, @User() admin) {
         return this.workService.deleteWork(id, admin);
     }

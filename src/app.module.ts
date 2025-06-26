@@ -6,7 +6,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './users/user.entity';
 import { UserModule } from './users/user.module';
 import { Work } from './work/work.entity';
-import { workModule } from './work/work.module';
+import { WorkModule } from './work/work.module';
+import { AssignToModule } from './assigntask/assign-to.module';
+import { AssignToModel } from './assigntask/assign.entity';
 
 @Module({
   imports: [
@@ -14,17 +16,18 @@ import { workModule } from './work/work.module';
       type: 'mysql',
       host: process.env.DATABASE_HOST || 'localhost',
       port: parseInt(process.env.DATABASE_PORT, 10) || 3306,
-      username: process.env.DATABASE_USERNAME || 'root',
+      username: process.env.DATABASE_USERNAME || '',
       password: process.env.DATABASE_PASSWORD || '',
       database: process.env.DATABASE_NAME || 'task_management',
-      entities: [User, Work],
-      synchronize: true,
+      entities: [User, Work, AssignToModel],
+      synchronize: false,
     }),
     AuthModule,
     UserModule,
-    workModule
+    WorkModule,
+    AssignToModule
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }

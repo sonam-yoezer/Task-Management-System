@@ -1,5 +1,6 @@
 import { IsEnum, IsNotEmpty, IsOptional, IsString, Length, Matches } from 'class-validator';
 import { WorkStatus } from './work.enum';
+import { ApiProperty } from '@nestjs/swagger';
 
 /**
  * DTO (Data Transfer Object) for creating a work item.
@@ -19,6 +20,7 @@ export class CreateWorkDto {
    * @example "Project Planning"
    */
   @IsString()
+  @ApiProperty()
   @IsNotEmpty({ message: 'Title is required' })
   @Length(3, 50, { message: 'Title must be between 3 and 50 characters' })
   @Matches(/^[a-zA-Z0-9 ]+$/, { message: 'Title can only contain letters, numbers, and spaces' })
@@ -34,20 +36,8 @@ export class CreateWorkDto {
    * @example "This task involves planning and resource allocation for the project."
    */
   @IsString()
+  @ApiProperty()
   @IsNotEmpty({ message: 'Description is required' })
   @Length(10, 500, { message: 'Description must be between 10 and 500 characters' })
   description: string;
-
-  /**
-   * The status of the work item.
-   * 
-   * - Optional field.
-   * - Must be one of the values: "pending", "in-progress", or "completed".
-   * - Defaults to "pending" if not provided.
-   * 
-   * @example "in-progress"
-   */
-  @IsOptional()
-  @IsEnum(WorkStatus, { message: 'Status must be pending, in-progress, or completed' })
-  status?: WorkStatus;
 }

@@ -1,28 +1,26 @@
+import { ApiProperty } from '@nestjs/swagger';
+import { IsEmail, IsEnum, IsNotEmpty, IsString, MinLength } from 'class-validator';
 import { Role } from 'src/users/role.enum';
-import { Column, CreateDateColumn, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 
 export class SignupDto {
-        @PrimaryGeneratedColumn()
-        id: number;
-    
-        @Column({ unique: true })
-        email: string;
-    
-        @Column()
-        firstName: string;
-    
-        @Column()
-        lastName: string;
-    
-        @Column()
-        password: string;
-    
-        @Column({ type: 'enum', enum: Role, default: Role.USER })
-        role: Role;
-    
-        @CreateDateColumn()
-        createdAt: Date;
-    
-        @UpdateDateColumn()
-        updatedAt: Date;
+
+    @ApiProperty()
+    @IsEmail()
+    email: string;
+
+    @ApiProperty()
+    @IsString()
+    @IsNotEmpty()
+    firstName: string;
+
+    @ApiProperty()
+    @IsString()
+    @IsNotEmpty()
+    lastName: string;
+
+    @ApiProperty()
+    @IsString()
+    @MinLength(6)
+    password: string;
+
 }

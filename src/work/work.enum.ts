@@ -27,4 +27,6 @@ export enum WorkStatus {
    * @example "completed"
    */
   COMPLETED = 'completed',
+
+  INCOMPLETE = 'incomplete',
 }
