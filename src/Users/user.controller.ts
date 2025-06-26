@@ -10,7 +10,7 @@ import { User } from "./user.entity";
  * All endpoints are protected by JWT authentication.
  */
 @UseGuards(AuthGuard('jwt'))
-@Controller('user')
+@Controller('api/user')
 export class UserController {
     /**
   * Constructor to inject UserService.
@@ -24,7 +24,7 @@ export class UserController {
     * @throws {ForbiddenException} If the user is not an admin.
     * @returns {Promise<User[]>} A list of all users.
     */
-    @Get()
+    @Get('/getAllUser')
     async findAll(@Request() req) {
         if (req.user.role !== 'admin') {
             throw new ForbiddenException('Access denied');
@@ -39,7 +39,7 @@ export class UserController {
     * @throws {ForbiddenException} If the user is not an admin.
     * @returns {Promise<User>} The user data.
     */
-    @Get(':id')
+    @Get('/getUserById:id')
     async findOne(@Param('id') id: number, @Request() req) {
         if (req.user.role !== 'admin') {
             throw new ForbiddenException('Access denied');
@@ -54,7 +54,7 @@ export class UserController {
   * @param {Request} req - The HTTP request object containing user details.
   * @returns {Promise<User>} The updated user data.
   */
-    @Put(':id')
+    @Put('/updateUser/:id')
     async update(
         @Param('id', ParseIntPipe) id: number,
         @Body() updateData: Partial<User>,
@@ -70,7 +70,7 @@ export class UserController {
     * @returns {Promise<string>} Success message.
     * @throws {ForbiddenException} If the user tries to delete another user's account.
     */
-    @Delete(':id')
+    @Delete('/deleteUser/:id')
     async delete(@Param('id', ParseIntPipe) id: number, @Request() req) {
         return this.userService.delete(id, req.user);
     }

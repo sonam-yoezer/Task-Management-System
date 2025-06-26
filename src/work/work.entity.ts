@@ -40,21 +40,6 @@ export class Work {
   description: string;
 
   /**
-   * The current status of the work item.
-   * 
-   * - Stored as an enum with possible values: "pending", "in-progress", or "completed".
-   * - Defaults to "pending" if not specified.
-   * 
-   * @example WorkStatus.IN_PROGRESS
-   */
-  @Column({
-    type: 'enum',
-    enum: WorkStatus,
-    default: WorkStatus.PENDING, 
-  })
-  status: WorkStatus;
-
-  /**
    * The timestamp when the work item was created.
    * 
    * - Automatically generated upon creation.
@@ -69,4 +54,5 @@ export class Work {
    */
   @UpdateDateColumn()
   updatedAt: Date;
+
 }
