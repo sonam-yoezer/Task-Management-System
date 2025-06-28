@@ -27,4 +27,11 @@ export class AssignToModel {
 
   @Column({ type: 'text' })
   description: String;
+
+  @Column()
+  assignedBy: String;
+
+@Column({ type: 'text', nullable: true })
+remarksByAdmin: string;
+
 }

@@ -29,4 +29,12 @@ export enum WorkStatus {
   COMPLETED = 'completed',
 
   INCOMPLETE = 'incomplete',
+
+  APPROVED = 'approved',
+
+  REJECTED = 'rejected',
+
+  RESUBMITTED = 'resubmitted',
+
+  LATESUBMIT = 'latesubmit'
 }
