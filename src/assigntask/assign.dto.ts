@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsDateString, IsInt, Min } from 'class-validator';
+import { IsDateString, IsInt, IsNotEmpty, IsString, Min } from 'class-validator';
 
 export class AssignTaskDto {
   @ApiProperty({ example: 1, description: 'ID of the user to whom the task will be assigned' })
@@ -18,4 +18,16 @@ export class AssignTaskDto {
 
   @ApiProperty()
   description: string;
+}
+
+export class UpdateStatusDto {
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsString()
+  remarksByAdmin: string;
+}
+
+export class MarkAsDoneDto {
+  @ApiProperty({ description: 'Remarks about the submitted task' })
+  remarks: string;
 }

@@ -6,10 +6,12 @@ import { User } from '../users/user.entity';
 import { Work } from '../work/work.entity';
 import { AssignedTaskRepository } from './assign.repository';
 import { AssignToModel } from './assign.entity';
+import { MarkAsDone } from './mark-as-done.entity';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([AssignToModel, User, Work])],
+  imports: [TypeOrmModule.forFeature([AssignToModel, User, Work, MarkAsDone, ]), ScheduleModule.forRoot(),],
   controllers: [AssignToController],
-  providers: [AssignToService, AssignedTaskRepository],
+  providers: [AssignToService, AssignedTaskRepository,],
 })
 export class AssignToModule { }
