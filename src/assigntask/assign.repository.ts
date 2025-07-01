@@ -113,4 +113,40 @@ export class AssignedTaskRepository {
     );
   }
 
+  /**
+ * Retrieves all assigned tasks filtered by status.
+ * 
+ * @param {string} status - The status to filter tasks by.
+ * @returns {Promise<any[]>} - The list of filtered tasks.
+ */
+async findTasksByStatus(status: string): Promise<any[]> {
+  return this.dataSource.query(
+    `
+    SELECT 
+      assignment_id,
+      dateline,
+      status,
+      task_description,
+      remarks_by_admin,
+      assigned_by,
+      user_id,
+      email,
+      firstName,
+      lastName,
+      user_role,
+      work_id,
+      workName,
+      description,
+      work_created_at,
+      work_updated_at,
+      submission_dateline,
+      submission_remarks
+    FROM assigned_tasks_view
+    WHERE status = ?
+    ORDER BY dateline ASC
+    `,
+    [status]
+  );
+}
+
 }
