@@ -178,4 +178,17 @@ export class AssignToController {
     );
   }
 
+  /**
+   * GET /tasks-by-status/:status
+   * 
+   * Retrieves all tasks filtered by a specific status.
+   * 
+   * @param {string} status - The status to filter tasks by.
+   * @returns {Promise<any[]>} - A list of tasks matching the status.
+   */
+  @Get('/getTaskByStatus/:status')
+  async getTasksByStatus(@Param('status') status: string, @Req() req) {
+    return this.assignService.getTasksByStatus(status, req.user);
+  }
+
 }

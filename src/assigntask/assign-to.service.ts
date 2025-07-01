@@ -113,13 +113,13 @@ export class AssignToService {
       const now = new Date();
 
       // Update existing assignments past deadline as INCOMPLETE (existing logic)
-      await this.assignRepository
-        .createQueryBuilder()
-        .update()
-        .set({ status: WorkStatus.INCOMPLETE })
-        .where("dateline < :now", { now })
-        .andWhere("status != :completedStatus", { completedStatus: WorkStatus.COMPLETED })
-        .execute();
+      // await this.assignRepository
+      //   .createQueryBuilder()
+      //   .update()
+      //   .set({ status: WorkStatus.INCOMPLETE })
+      //   .where("dateline < :now", { now })
+      //   .andWhere("status != :completedStatus", { completedStatus: WorkStatus.COMPLETED })
+      //   .execute();
 
       // Check existing assignment for user & work
       const existingAssignment = await this.assignRepository.findOne({
@@ -457,6 +457,36 @@ export class AssignToService {
       console.error('Error in createMarkAsDone:', error);
       throw new Error('Failed to mark assignment as done. Please try again.');
     }
+  }
+
+  async getTasksByStatus(status: string, user: any): Promise<any> {
+    // Role Check
+    if (user?.role !== 'admin') {
+      throw new ForbiddenException('You do not have permission to access this resource');
+    }
+
+    const VALID_STATUSES = [
+      'in-progress',
+      'completed',
+      'incomplete',
+      'approved',
+      'rejected',
+      'resubmitted',
+      'latesubmit',
+    ];
+
+    // Validate if the provided status is allowed
+    if (!VALID_STATUSES.includes(status)) {
+      throw new BadRequestException(`Invalid status: ${status}. Allowed statuses are: ${VALID_STATUSES.join(', ')}`);
+    }
+
+    const tasks = await this.assignedTaskRepo.findTasksByStatus(status);
+
+    if (!tasks || tasks.length === 0) {
+      throw new NotFoundException(`No tasks found with status: ${status}`);
+    }
+
+    return tasks;
   }
 
 }
