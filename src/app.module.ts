@@ -11,6 +11,7 @@ import { AssignToModule } from './assigntask/assign-to.module';
 import { AssignToModel } from './assigntask/assign.entity';
 import { MarkAsDone } from './assigntask/mark-as-done.entity';
 import { GlobalConfigModule } from './global-config.module';
+import { SummaryModule } from './summary/summary.module';
 
 @Module({
   imports: [
@@ -22,13 +23,14 @@ import { GlobalConfigModule } from './global-config.module';
       password: process.env.DATABASE_PASSWORD || '',
       database: process.env.DATABASE_NAME || 'task_management',
       entities: [User, Work, AssignToModel, MarkAsDone],
-      synchronize: true,
+      synchronize: false,
     }),
     AuthModule,
     UserModule,
     WorkModule,
     AssignToModule,
     GlobalConfigModule, 
+    SummaryModule
   ],
   controllers: [AppController],
   providers: [AppService],

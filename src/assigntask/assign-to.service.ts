@@ -372,92 +372,121 @@ export class AssignToService {
    * @param file - Uploaded file (Multer).
    * @returns Confirmation message.
    */
-  async createMarkAsDone(
-    currentUser: User,
-    assignmentId: number,
-    remarks: string,
-    file: Express.Multer.File,
-  ): Promise<{ success: boolean; message: string }> {
-    try {
-      // Find assignment with user relation
-      const assignment = await this.assignRepository.findOne({
-        where: { id: assignmentId },
-        relations: ['user'],
+async createMarkAsDone(
+  currentUser: User,
+  assignmentId: number,
+  remarks: string,
+  file: Express.Multer.File,
+): Promise<{ success: boolean; message: string }> {
+  try {
+    // Find assignment with user relation
+    const assignment = await this.assignRepository.findOne({
+      where: { id: assignmentId },
+      relations: ['user'],
+    });
+
+    if (!assignment) {
+      throw new NotFoundException('Assignment not found');
+    }
+
+    // Ensure only the assigned user can submit
+    if (assignment.user.id !== currentUser.id) {
+      throw new ForbiddenException('You are not authorized to mark this assignment as done');
+    }
+
+    if (!file) {
+      throw new BadRequestException('File is required');
+    }
+
+    // Validate allowed statuses
+    if (
+      assignment.status !== WorkStatus.REJECTED &&
+      assignment.status !== WorkStatus.IN_PROGRESS &&
+      assignment.status !== WorkStatus.INCOMPLETE
+    ) {
+      throw new ForbiddenException('You cannot submit this assignment in its current status.');
+    }
+
+    // Generate unique filename and path using POSIX to get forward slashes
+    const fileExt = path.extname(file.originalname);
+    const fileName = `${uuidv4()}${fileExt}`;
+    const filePath = path.posix.join(this.fileStoragePath, fileName);
+
+    // Ensure directory exists
+    if (!fs.existsSync(this.fileStoragePath)) {
+      fs.mkdirSync(this.fileStoragePath, { recursive: true });
+    }
+
+    // Save file to disk
+    fs.writeFileSync(filePath, file.buffer);
+
+    let markAsDone;
+
+    if (assignment.status === WorkStatus.REJECTED) {
+      // Find existing markAsDone record for this assignment
+      markAsDone = await this.markAsDoneRepository.findOne({
+        where: { assignment: { id: assignment.id } },
       });
 
-      if (!assignment) {
-        throw new NotFoundException('Assignment not found');
+      if (markAsDone) {
+        // Update existing record
+        markAsDone.submittedDate = new Date();
+        markAsDone.remarks = remarks;
+        markAsDone.fileName = filePath;
+      } else {
+        // Fallback: If no record found, create a new one
+        markAsDone = this.markAsDoneRepository.create({
+          assignment,
+          submittedDate: new Date(),
+          remarks,
+          fileName: filePath,
+        });
       }
 
-      // Ensure only the assigned user can submit
-      if (assignment.user.id !== currentUser.id) {
-        throw new ForbiddenException('You are not authorized to mark this assignment as done');
-      }
-
-      if (!file) {
-        throw new BadRequestException('File is required');
-      }
-
-      // Validate allowed statuses
-      if (
-        assignment.status !== WorkStatus.REJECTED &&
-        assignment.status !== WorkStatus.IN_PROGRESS &&
-        assignment.status !== WorkStatus.INCOMPLETE
-      ) {
-        throw new ForbiddenException('You cannot submit this assignment in its current status.');
-      }
-
-      // Generate unique filename and path using POSIX to get forward slashes
-      const fileExt = path.extname(file.originalname);
-      const fileName = `${uuidv4()}${fileExt}`;
-      const filePath = path.posix.join(this.fileStoragePath, fileName);
-
-      // Ensure directory exists
-      if (!fs.existsSync(this.fileStoragePath)) {
-        fs.mkdirSync(this.fileStoragePath, { recursive: true });
-      }
-
-      // Save file to disk
-      fs.writeFileSync(filePath, file.buffer);
-
-      // Save mark as done record
-      const markAsDone = this.markAsDoneRepository.create({
+      // Update assignment status to RESUBMITTED
+      assignment.status = WorkStatus.RESUBMITTED;
+    } else if (assignment.status === WorkStatus.IN_PROGRESS) {
+      // Create new submission and update status to COMPLETED
+      markAsDone = this.markAsDoneRepository.create({
         assignment,
         submittedDate: new Date(),
         remarks,
-        fileName: filePath, // Forward slashes will be stored
+        fileName: filePath,
       });
-
-      // Status Update Logic
-      if (assignment.status === WorkStatus.REJECTED) {
-        assignment.status = WorkStatus.RESUBMITTED;
-      } else if (assignment.status === WorkStatus.IN_PROGRESS) {
-        assignment.status = WorkStatus.COMPLETED;
-      } else if (assignment.status === WorkStatus.INCOMPLETE) {
-        assignment.status = WorkStatus.LATESUBMIT;
-      }
-
-      await this.assignRepository.save(assignment);
-      await this.markAsDoneRepository.save(markAsDone);
-
-      return {
-        success: true,
-        message: 'Task marked as done successfully.',
-      };
-
-    } catch (error) {
-      if (
-        error instanceof NotFoundException ||
-        error instanceof ForbiddenException ||
-        error instanceof BadRequestException
-      ) {
-        throw error;
-      }
-
-      console.error('Error in createMarkAsDone:', error);
-      throw new Error('Failed to mark assignment as done. Please try again.');
+      assignment.status = WorkStatus.COMPLETED;
+    } else if (assignment.status === WorkStatus.INCOMPLETE) {
+      // Create new submission and update status to LATESUBMIT
+      markAsDone = this.markAsDoneRepository.create({
+        assignment,
+        submittedDate: new Date(),
+        remarks,
+        fileName: filePath,
+      });
+      assignment.status = WorkStatus.LATESUBMIT;
     }
+
+    // Save assignment and submission
+    await this.assignRepository.save(assignment);
+    await this.markAsDoneRepository.save(markAsDone);
+
+    return {
+      success: true,
+      message: 'Task marked as done successfully.',
+    };
+  } catch (error) {
+    if (
+      error instanceof NotFoundException ||
+      error instanceof ForbiddenException ||
+      error instanceof BadRequestException
+    ) {
+      throw error;
+    }
+
+    console.error('Error in createMarkAsDone:', error);
+    throw new Error('Failed to mark assignment as done. Please try again.');
   }
+}
+
 
   async getTasksByStatus(status: string, user: any): Promise<any> {
     // Role Check
